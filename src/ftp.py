@@ -29,15 +29,23 @@ class FTP():
         #Return False when passwd error
         if not '230' in _:   return False, _
         else:
-            self.loginSucc = True        
+            #Init passive mode. If error, return False
             self.sock.sendall('PASV\r\n')
             __ = self.sock.recv(1024)
-            #Init passive mode. If error, return False
             if not '227' in __:     return False, __
             __ = __[27:-4].split(',')
             self.h = __[:4]
             self.p = __[4:]
+            self.loginSucc = True
             return True, _
+
+    def getCurrentList(self):
+
+        self.sock.sendall('LIST\r\n')
+        _ = ''
+        while True:
+            print self.sock.recv(1024)
+        print _
 
     def cwd(self, floder):
 
@@ -47,4 +55,3 @@ class FTP():
 if __name__ == '__main__':
     ftp = FTP('ftp.sjtu.edu.cn')
     _, recv = ftp.login()
-    print _, recv
