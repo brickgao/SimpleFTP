@@ -7,6 +7,7 @@ class FTP():
     def __init__(self, url):
         
         self.url = url
+        self.loginSucc = False
 
     #If you want to login anonymous, just left account empty
     def login(self, account = 'anonymous', passwd = ''):
@@ -27,7 +28,16 @@ class FTP():
         _ = self.sock.recv(1024)
         #Return False when passwd error
         if not '230' in _:   return False, _
-        else:                return True, _
+        else:
+            self.loginSucc = True        
+            self.sock.sendall('PASV\r\n')
+            __ = self.sock.recv(1024)
+            #Init passive mode. If error, return False
+            if not '227' in __:     return False, __
+            __ = __[27:-4].split(',')
+            self.h = __[:4]
+            self.p = __[4:]
+            return True, _
 
     def cwd(self, floder):
 
