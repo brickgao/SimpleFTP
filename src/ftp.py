@@ -92,6 +92,7 @@ class FTP():
         _ = self.sock.recv(1024)
         #If change directory error
         if not '250' in _:       return False, _
+        self.sockPasv.close()
         self.pasvSucc = False
         return True, _
         
