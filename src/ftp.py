@@ -62,6 +62,8 @@ class FTP():
             _ = self.sock.recv(1024)
             if not '150' in _:   return False, _
             _ = self.sockPasv.recv(8152)
+            self.pasvSucc = False
+            self.sockPasv.close()
             _ = _.split('\r\n')[:-1]
             self.currentList = []
             for __ in _:
@@ -92,8 +94,6 @@ class FTP():
         _ = self.sock.recv(1024)
         # If change directory error
         if not '250' in _:       return False, _
-        self.sockPasv.close()
-        self.pasvSucc = False
         return True, _
         
     def getSize(self, filename):
@@ -102,10 +102,29 @@ class FTP():
 
         self.sock.sendall('SIZE ' + filename + '\r\n')
         _ = self.sock.recv(1024)
-        # If Size Command error
+        # If SIZE Command error
         if _[:3] != '213':       return False, _
         return True, _[4:-2]
 
+    def getDownload(self, filenameIn, filenameOut):
+
+        if not self.loginSucc:  return False, 'You should login first'
+        if not self.pasvSucc: return False, 'You should change into PASV mode'
+        
+        self.sock.sendall('RETR ' + filenameIn + '\r\n')
+        _ = self.sock.recv(1024)
+        # If RETR Command error
+        if not '150' in _:       return False, _
+        _ = self.sockPasv.recv(8152)
+        _file = open(unicode(filenameOut), 'wb')
+        _file.write(_)
+        _file.close()
+        self.pasvSucc = False
+        self.sockPasv.close()
+        _ = self.sock.recv(1024)
+        # If not complete
+        if not '226' in _:       return False, _
+        return True, _
     
 if __name__ == '__main__':
     ftp = FTP('ftp.sjtu.edu.cn')
@@ -116,4 +135,6 @@ if __name__ == '__main__':
     print ftp.changeIntoPasv()
     print ftp.retrlines('LIST')
     print ftp.getSize('index.html')
+    print ftp.changeIntoPasv()
+    print ftp.getDownload('index.html', '123.html')
 
