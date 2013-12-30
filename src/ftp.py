@@ -11,27 +11,27 @@ class FTP():
         self.pasvSucc = False
         self.currentList = []
 
-    #If you want to login anonymous, just left account empty
+    # If you want to login anonymous, just left account empty
     def login(self, account = 'anonymous', passwd = ''):
 
         self.account = account
         self.passwd = passwd
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #Port 21 is used to trans command
+        # Port 21 is used to trans command
         self.sock.connect((self.url, 21))
         _ = self.sock.recv(1024)
-        #Return False when connect error
+        # Return False when connect error
         if not '220' in _:   return False, _
         self.sock.sendall('USER ' + self.account + '\r\n')
         _ = self.sock.recv(1024)
-        #Return False when send account error
+        # Return False when send account error
         if not '331' in _:   return False, _
         self.sock.sendall('PASS ' + self.passwd + '\r\n')
         _ = self.sock.recv(1024)
-        #Return False when passwd error
+        # Return False when passwd error
         if not '230' in _:   return False, _
         else:
-            #Init passive mode. If error, return False
+            # Init passive mode. If error, return False
             self.loginSucc = True
             return True, _
 
@@ -42,7 +42,7 @@ class FTP():
         self.sock.sendall('PASV\r\n')
         _ = self.sock.recv(1024)
         if not '227' in _:     return False, _
-        #Use another sock
+        # Use another sock
         __ = _[27:-4].split(',')
         self.h = __[0] + '.' + __[1] + '.' + __[2] + '.' + __[3]
         self.p = int(__[4]) * 256 + int(__[5])
@@ -56,7 +56,7 @@ class FTP():
         if not self.loginSucc:  return False, 'You should login first'
         if not self.pasvSucc: return False, 'You should change into PASV mode'
 
-        #List Command: List the file in current directory
+        # List Command: List the file in current directory
         if command == 'LIST':
             self.sock.sendall('LIST\r\n')
             _ = self.sock.recv(1024)
@@ -65,7 +65,7 @@ class FTP():
             _ = _.split('\r\n')[:-1]
             self.currentList = []
             for __ in _:
-                #Format List
+                # Format List
                 ___ = re.findall(r'[\w|\-|>|/|\.]+', __)
                 ____ = {}
                 ____['permissions'] = ___[0]
@@ -90,7 +90,7 @@ class FTP():
 
         self.sock.sendall('CWD ' + directory + '\r\n')
         _ = self.sock.recv(1024)
-        #If change directory error
+        # If change directory error
         if not '250' in _:       return False, _
         self.sockPasv.close()
         self.pasvSucc = False
