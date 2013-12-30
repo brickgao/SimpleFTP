@@ -96,6 +96,15 @@ class FTP():
         self.pasvSucc = False
         return True, _
         
+    def getSize(self, filename):
+        
+        if not self.loginSucc:   return False, 'You should login first.'
+
+        self.sock.sendall('SIZE ' + filename + '\r\n')
+        _ = self.sock.recv(1024)
+        # If Size Command error
+        if _[:3] != '213':       return False, _
+        return True, _[4:-2]
 
     
 if __name__ == '__main__':
@@ -106,4 +115,5 @@ if __name__ == '__main__':
     print ftp.cwd('html')
     print ftp.changeIntoPasv()
     print ftp.retrlines('LIST')
+    print ftp.getSize('index.html')
 
