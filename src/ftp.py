@@ -8,6 +8,7 @@ class FTP():
         
         self.url = url
         self.loginSucc = False
+        self.pasvSucc = False
         self.currentList = []
 
     #If you want to login anonymous, just left account empty
@@ -31,18 +32,29 @@ class FTP():
         if not '230' in _:   return False, _
         else:
             #Init passive mode. If error, return False
-            self.sock.sendall('PASV\r\n')
-            __ = self.sock.recv(1024)
-            if not '227' in __:     return False, __
-            __ = __[27:-4].split(',')
-            self.h = __[0] + '.' + __[1] + '.' + __[2] + '.' + __[3]
-            self.p = int(__[4]) * 256 + int(__[5])
-            self.sockPasv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sockPasv.connect((self.h, self.p))
             self.loginSucc = True
             return True, _
 
+    def changeIntoPasv(self):
+        
+        if not self.loginSucc:  return False, 'You should login first'
+
+        self.sock.sendall('PASV\r\n')
+        _ = self.sock.recv(1024)
+        if not '227' in _:     return False, _
+        #Use another sock
+        __ = _[27:-4].split(',')
+        self.h = __[0] + '.' + __[1] + '.' + __[2] + '.' + __[3]
+        self.p = int(__[4]) * 256 + int(__[5])
+        self.sockPasv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sockPasv.connect((self.h, self.p))
+        self.pasvSucc = True
+        return True, _
+
     def retrlines(self, command):
+
+        if not self.loginSucc:  return False, 'You should login first'
+        if not self.pasvSucc: return False, 'You should change into PASV mode'
 
         #List Command: List the file in current directory
         if command == 'LIST':
@@ -68,16 +80,29 @@ class FTP():
                 else:               ____['isLn'] = False
                 if ____['isLn']:    ____['Ln'] = ___[8]
                 self.currentList.append(____)
+            _ = self.sock.recv(1024)
             if '226' in _:       return True, _
             
 
-    def cwd(self, floder):
+    def cwd(self, directory):
 
-        pass
+        if not self.loginSucc:  return False, 'You should login first.'
+
+        self.sock.sendall('CWD ' + directory + '\r\n')
+        _ = self.sock.recv(1024)
+        #If change directory error
+        if not '250' in _:       return False, _
+        self.pasvSucc = False
+        return True, _
+        
 
     
 if __name__ == '__main__':
     ftp = FTP('ftp.sjtu.edu.cn')
-    _, recv = ftp.login()
-    ftp.retrlines('LIST')
+    print ftp.login()
+    print ftp.changeIntoPasv()
+    print ftp.retrlines('LIST')
+    print ftp.cwd('html')
+    print ftp.changeIntoPasv()
+    print ftp.retrlines('LIST')
 
