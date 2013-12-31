@@ -89,6 +89,8 @@ class mainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.mainArea)
 
         self.setGeometry(100, 100, 400, 600)
+        self.setMinimumSize(400, 600)
+        self.setMaximumSize(400, 600)
         self.setWindowTitle(u'SimpleFTP')
         self.show()
         
