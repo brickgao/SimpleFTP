@@ -83,7 +83,8 @@ class FTP():
                 if ____['isLn']:    ____['Ln'] = ___[8]
                 self.currentList.append(____)
             _ = self.sock.recv(1024)
-            if '226' in _:       return True, _
+            if not '226' in _:       return False, _
+            else:                    return True, _
             
 
     def cwd(self, directory):
@@ -124,17 +125,29 @@ class FTP():
         _ = self.sock.recv(1024)
         # If not complete
         if not '226' in _:       return False, _
+        else:                    return True, _
+
+    def quit(self):
+        
+        if not self.loginSucc:  return False, 'You should login first'
+
+        self.sock.sendall('QUIT\r\n')
+        _ = self.sock.recv(1024)
+        # If QUIT command error
+        if not '221' in _:      return False, _
+        self.loginSucc = False
         return True, _
     
 if __name__ == '__main__':
-    ftp = FTP('ftp.sjtu.edu.cn')
+    ftp = FTP('192.168.182.132')
     print ftp.login()
     print ftp.changeIntoPasv()
     print ftp.retrlines('LIST')
-    print ftp.cwd('html')
+    print ftp.cwd('123')
     print ftp.changeIntoPasv()
     print ftp.retrlines('LIST')
-    print ftp.getSize('index.html')
+    print ftp.getSize('123.txt')
     print ftp.changeIntoPasv()
-    print ftp.getDownload('index.html', '123.html')
+    print ftp.getDownload('123.txt', '123.txt')
+    print ftp.quit()
 
