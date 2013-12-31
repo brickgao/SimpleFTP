@@ -127,6 +127,26 @@ class FTP():
         if not '226' in _:       return False, _
         else:                    return True, _
 
+    def getUpload(self, filename):
+
+        if not self.loginSucc:  return False, 'You should login first'
+        if not self.pasvSucc: return False, 'You should change into PASV mode'
+        
+        self.sock.sendall('STOR ' + filename + '\r\n')
+        _ = self.sock.recv(1024)
+        # If STOR command error
+        if not '150' in _:       return False, _
+        _file = open(unicode(filename), 'rb')
+        self.sockPasv.sendall(_file.read())
+        _file.close()
+        self.pasvSucc = False
+        self.sockPasv.close()
+        _ = self.sock.recv(1024)
+        # If transfer error
+        if not '226' in _:       return False, _
+        else:                    return True, _
+
+
     def quit(self):
         
         if not self.loginSucc:  return False, 'You should login first'
@@ -138,6 +158,7 @@ class FTP():
         self.loginSucc = False
         return True, _
     
+
 if __name__ == '__main__':
     ftp = FTP('192.168.182.132')
     print ftp.login()
@@ -149,5 +170,7 @@ if __name__ == '__main__':
     print ftp.getSize('123.txt')
     print ftp.changeIntoPasv()
     print ftp.getDownload('123.txt', '123.txt')
+    print ftp.changeIntoPasv()
+    print ftp.getUpload('456.txt')
     print ftp.quit()
 
