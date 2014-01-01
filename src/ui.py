@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys, threading, time
+import sys, threading, time, os
 from PyQt4 import QtGui, QtCore
 from ftp import FTP
 from logging import Logger, Handler, getLogger, Formatter
@@ -53,6 +53,7 @@ class QMainArea(QtGui.QWidget):
         self.uploadBtn = QtGui.QPushButton(u'上传')
 
         self.downloadBtn = QtGui.QPushButton(u'下载')
+        self.downloadBtn.clicked.connect(self.download)
 
         self.fileListLable = QtGui.QLabel(u'服务器文件列表')
         self.fileList = QtGui.QTreeWidget()
@@ -108,23 +109,22 @@ class QMainArea(QtGui.QWidget):
             return self.errorAlert(u'请输入服务器的地址')
         if self.accountText.text() == '' and self.passwdText.text() != '':
             return self.errorAlert(u'您已经输入密码，请输入用户名')
-        self.ftp.url = self.addressText.text()
+        self.ftp.url = str(self.addressText.text())
         if self.accountText.text() == '' and self.passwdText.text() == '':
             self.ftp.login()
         else:
             self.ftp.login(self.accountText.text(), 
                            self.passwdText.text())
 
-        self.ftp.retrlines('LIST')
-
         self.refreshFileList()
 
 
     def refreshFileList(self):
         
+        self.ftp.retrlines('LIST')
         self.fileList.clear()
         root = QtGui.QTreeWidgetItem()
-        root.setText(0, '..')
+        root.setText(0, u'..')
         self.fileList.addTopLevelItem(root)
         for _ in self.ftp.currentList:
             fileInfo = QtGui.QTreeWidgetItem()
@@ -147,11 +147,46 @@ class QMainArea(QtGui.QWidget):
         t = threading.Thread(target=self.logoutRun)
         t.start()
 
+    
     def logoutRun(self):
 
         self.ftp.quit()
         self.fileList.clear()
 
+    
+    def download(self):
+
+        _ = self.fileList.currentItem()
+        if not _:
+            return self.errorAlert(u'请选择文件')
+        if _.text(2) != u'非文件夹/链接':
+            return self.errorAlert(u'请选择非文件夹/连接')
+        fname = QtGui.QFileDialog.getSaveFileName(self,
+                                                  u'下载文件', 
+                                                  _.text(0), 
+                                                  u'*.*')
+        fname = str(os.path.abspath(unicode(fname)))
+        __ = str(_.text(0))
+        if fname == '':
+            return
+
+        t = threading.Thread(target=self.downloadRun, args=(__,
+                                                            fname, ))
+        t.start()
+
+            
+    def downloadRun(self, filenameIn, filenameOut):
+        
+        self.ftp.getDownload(filenameIn, filenameOut)
+
+        self.refreshFileList()
+
+        
+    def upload(self):
+
+        pass
+
+        
     def errorAlert(self, s):
 
         QtGui.QMessageBox.critical(self, u'错误', s)
