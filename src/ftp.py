@@ -26,6 +26,7 @@ class FTP:
             self.logger.error(_[:-2])
             return False
         else:   self.logger.info(_[:-2])
+        self.serverWelcome = _[:-2]
         self.sock.sendall('USER ' + self.account + '\r\n')
         _ = self.sock.recv(1024)
         self.logger.info('USER ***')
@@ -70,7 +71,9 @@ class FTP:
 
     def retrlines(self, command):
 
-        if not self.loginSucc:  return False, 'You should login first'
+        if not self.loginSucc:
+            self.logger.error('You should login first.')
+            return False
 
         self.changeIntoPasv()
 
@@ -87,22 +90,45 @@ class FTP:
             self.sockPasv.close()
             _ = _.split('\r\n')[:-1]
             self.currentList = []
-            for __ in _:
-                # Format List
-                ___ = re.findall(r'[\w|\-|>|/|\.]+', __)
-                ____ = {}
-                ____['permissions'] = ___[0]
-                ____['linkNum']     = ___[1] 
-                ____['owner']       = ___[2]
-                ____['ownerGroup']  = ___[3]
-                ____['date']        = ___[7] + ' ' + \
-                                      ___[6] + ' ' + \
-                                      ___[5]
-                ____['name']        = ___[6]
-                if ___[7] == '->':  ____['isLn'] = True
-                else:               ____['isLn'] = False
-                if ____['isLn']:    ____['Ln'] = ___[8]
-                self.currentList.append(____)
+            if 'vsFTPd' in self.serverWelcome:
+                for __ in _:
+                    # Format List
+                    ___ = re.findall(r'[\w|\-|>|/|\.|\:]+', __)
+                    ____ = {}
+                    ____['permissions'] = ___[0]
+                    ____['linkNum']     = ___[1] 
+                    ____['owner']       = ___[2]
+                    ____['ownerGroup']  = ___[3]
+                    ____['size']        = ___[4]
+                    if ':' in ___[7]:
+                        ____['date']        = ___[5] + ' ' + \
+                                              ___[6] + ' ' + \
+                                              ___[7]
+                    else:
+                        ____['date']        = ___[7] + ' ' + \
+                                              ___[5] + ' ' + \
+                                              ___[6]
+                    ____['name']        = ___[8]
+                    if '->' in __:      ____['isLn'] = True
+                    else:               ____['isLn'] = False
+                    if ____['isLn']:    ____['Ln'] = ___[10]
+                    self.currentList.append(____)
+            else:
+                for __ in _:
+                    # Format List
+                    ___ = re.findall(r'[\w|\-|>|/|\.|\:]+', __)
+                    ____ = {}
+                    ____['permissions'] = ___[0]
+                    ____['linkNum']     = ___[1]
+                    ____['owner']       = ___[2]
+                    ____['ownerGroup']  = ___[3]
+                    ____['size']        = ___[4]
+                    ____['date']        = ___[5] + ' ' + \
+                                          ___[6] + ' ' + \
+                                          ___[7]                        
+                    ____['name']        = ___[8]
+                    ____['isLn']        = False
+                    self.currentList.append(____)
             _ = self.sock.recv(1024)
             if not '226' in _:
                 self.logger.error(_[:-2])
@@ -114,7 +140,9 @@ class FTP:
 
     def cwd(self, directory):
 
-        if not self.loginSucc:  return False, 'You should login first.'
+        if not self.loginSucc:
+            self.logger.error('You should login first.')
+            return False
 
         self.sock.sendall('CWD ' + directory + '\r\n')
         self.logger.info('CWD ' + directory)
