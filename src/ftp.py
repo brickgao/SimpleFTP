@@ -1,6 +1,6 @@
 # -*- coding:utf8 -*-
 
-import socket, re, time
+import socket, re, time, logging
 
 class FTP:
     
@@ -9,18 +9,8 @@ class FTP:
         self.url = url
         self.loginSucc = False
         self.currentList = []
+        self.logger = logging.Logger(__name__)
 
-    def outputLog(self, method, msg):
-        
-        s = ''
-        if method == 'INFO':
-            s = time.strftime('%Y/%m/%d %H:%M:%S ') + \
-                '<font color=green>INFO: ' + msg + '</font>'
-        elif method == 'ERROR':
-            s = time.strftime('%Y/%m/%d %H:%M:%S') + \
-                '<font color=red>ERROR: ' + msg + '</font>'
-        print s
-            
 
     # If you want to login anonymous, just left account empty
     def login(self, account = 'anonymous', passwd = ''):
@@ -33,29 +23,30 @@ class FTP:
         _ = self.sock.recv(1024)
         # Return False when connect error
         if not '220' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
-        else:   self.outputLog('INFO', _)
+        else:   self.logger.info(_[:-2])
         self.sock.sendall('USER ' + self.account + '\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'USER ***\r\n')
+        self.logger.info('USER ***')
         # Return False when send account error
         if not '331' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
-        else:   self.outputLog('INFO', _)
+        else:   self.logger.info( _[:-2])
         self.sock.sendall('PASS ' + self.passwd + '\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'PASS ***\r\n')
+        self.logger.info('PASS ***')
         # Return False when passwd error
         if not '230' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
             # Init passive mode. If error, return False
             self.loginSucc = True
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
             return True
+
 
     def changeIntoPasv(self):
         
@@ -63,11 +54,11 @@ class FTP:
 
         self.sock.sendall('PASV\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'PASV\r\n')
+        self.logger.info('PASV')
         if not '227' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
-        else:   self.outputLog('INFO', _)
+        else:   self.logger.info(_[:-2])
         # Use another sock
         __ = _[27:-4].split(',')
         self.h = __[0] + '.' + __[1] + '.' + __[2] + '.' + __[3]
@@ -75,6 +66,7 @@ class FTP:
         self.sockPasv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sockPasv.connect((self.h, self.p))
         return True
+
 
     def retrlines(self, command):
 
@@ -86,11 +78,11 @@ class FTP:
         if command == 'LIST':
             self.sock.sendall('LIST\r\n')
             _ = self.sock.recv(1024)
-            self.outputLog('INFO', 'LIST\r\n')
+            self.logger.info('LIST')
             if not '150' in _:
-                self.outputLog('ERROR', _)
+                self.logger.error(_[:-2])
                 return False
-            else:   self.outputLog('INFO', _)
+            else:   self.logger.info(_[:-2])
             _ = self.sockPasv.recv(8152)
             self.sockPasv.close()
             _ = _.split('\r\n')[:-1]
@@ -113,10 +105,10 @@ class FTP:
                 self.currentList.append(____)
             _ = self.sock.recv(1024)
             if not '226' in _:
-                self.outputLog('ERROR', _)
+                self.logger.error(_[:-2])
                 return False
             else:
-                self.outputLog('INFO', _)
+                self.logger.info(_[:-2])
                 return True
             
 
@@ -125,48 +117,50 @@ class FTP:
         if not self.loginSucc:  return False, 'You should login first.'
 
         self.sock.sendall('CWD ' + directory + '\r\n')
-        self.outputLog('INFO', 'CWD ' + directory + '\r\n')
+        self.logger.info('CWD ' + directory)
         _ = self.sock.recv(1024)
         # If change directory error
         if not '250' in _:       
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
-        self.outputLog('INFO', _)
+        self.logger.info(_[:-2])
         return True
+
         
     def getSize(self, filename):
         
         if not self.loginSucc:
-            self.outputLog('ERROR', 'You should login first.')
+            self.logger.error('You should login first.')
             return False
 
         self.sock.sendall('SIZE ' + filename + '\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'SIZE ' + filename + '\r\n')
+        self.logger.info('SIZE ' + filename)
         # If SIZE Command error
         if _[:3] != '213':
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
             return True
 
+            
     def getDownload(self, filenameIn, filenameOut):
 
         if not self.loginSucc:
-            self.outputLog('ERROR', 'You should login first.')
+            self.logger.info('You should login first.')
             return False
 
         self.changeIntoPasv()
 
         self.sock.sendall('RETR ' + filenameIn + '\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'RETR ' + filenameIn + '\r\n')
+        self.logger.info('RETR ' + filenameIn)
         # If RETR Command error
         if not '150' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
-        self.outputLog('INFO', _)
+        self.logger.info(_[:-2])
         _ = self.sockPasv.recv(8152)
         _file = open(unicode(filenameOut), 'wb')
         _file.write(_)
@@ -175,29 +169,30 @@ class FTP:
         _ = self.sock.recv(1024)
         # If not complete
         if not '226' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
             return True
+
 
     def getUpload(self, filename):
 
         if not self.loginSucc:
-            self.outputLog('ERROR', 'You should login first.')
+            self.logger.error('You should login first.')
             return False
 
         self.changeIntoPasv()
         
         self.sock.sendall('STOR ' + filename + '\r\n')
         _ = self.sock.recv(1024)
-        self.outputLog('INFO', 'STOR ' + filename + '\r\n')
+        self.logger.info('STOR ' + filename)
         # If STOR command error
         if not '150' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
         _file = open(unicode(filename), 'rb')
         self.sockPasv.sendall(_file.read())
         _file.close()
@@ -205,40 +200,27 @@ class FTP:
         _ = self.sock.recv(1024)
         # If transfer error
         if not '226' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
             return True
 
 
     def quit(self):
         
         if not self.loginSucc:
-            self.outputLog('ERROR', 'You should login first.')
+            self.logger.error('You should login first.')
             return False
 
         self.sock.sendall('QUIT\r\n')
-        self.outputLog('INFO', 'QUIT\r\n')
+        self.logger.info('QUIT')
         _ = self.sock.recv(1024)
         # If QUIT command error
         if not '221' in _:
-            self.outputLog('ERROR', _)
+            self.logger.error(_[:-2])
             return False
         else:
-            self.outputLog('INFO', _)
+            self.logger.info(_[:-2])
         self.loginSucc = False
         return True
-    
-
-if __name__ == '__main__':
-    ftp = FTP('192.168.182.132')
-    print ftp.login()
-    print ftp.retrlines('LIST')
-    print ftp.cwd('123')
-    print ftp.retrlines('LIST')
-    print ftp.getSize('123.txt')
-    print ftp.getDownload('123.txt', '123.txt')
-    print ftp.getUpload('456.txt')
-    print ftp.quit()
-
