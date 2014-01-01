@@ -144,8 +144,13 @@ class QMainArea(QtGui.QWidget):
 
     def logout(self):
         
-        t = threading.Thread(target=self.ftp.quit)
+        t = threading.Thread(target=self.logoutRun)
         t.start()
+
+    def logoutRun(self):
+
+        self.ftp.quit()
+        self.fileList.clear()
 
     def errorAlert(self, s):
 
