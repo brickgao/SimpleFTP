@@ -28,7 +28,7 @@ class FTP:
         else:   self.logger.info(_[:-2])
         self.serverWelcome = _[:-2]
         self.sock.sendall('USER ' + self.account + '\r\n')
-        self.logger.info('USER ' + self.account + '\r\n')
+        self.logger.info('USER ' + self.account)
         _ = self.sock.recv(1024)
         # Return False when send account error
         if not '331' in _:
