@@ -17,8 +17,6 @@ class FTP:
 
         self.account = str(account)
         self.passwd = str(passwd)
-        print type(self.account)
-        print self.account, self.passwd
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Port 21 is used to trans command
         self.sock.connect((self.url, 21))
