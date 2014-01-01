@@ -15,8 +15,10 @@ class FTP:
     # If you want to login anonymous, just left account empty
     def login(self, account = 'anonymous', passwd = ''):
 
-        self.account = account
-        self.passwd = passwd
+        self.account = str(account)
+        self.passwd = str(passwd)
+        print type(self.account)
+        print self.account, self.passwd
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Port 21 is used to trans command
         self.sock.connect((self.url, 21))
@@ -28,8 +30,8 @@ class FTP:
         else:   self.logger.info(_[:-2])
         self.serverWelcome = _[:-2]
         self.sock.sendall('USER ' + self.account + '\r\n')
+        self.logger.info('USER ' + self.account + '\r\n')
         _ = self.sock.recv(1024)
-        self.logger.info('USER ***')
         # Return False when send account error
         if not '331' in _:
             self.logger.error(_[:-2])
