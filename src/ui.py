@@ -1,8 +1,29 @@
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, threading, time
 from PyQt4 import QtGui, QtCore
 from ftp import FTP
+from logging import Logger, Handler, getLogger, Formatter
+
+mutex = threading.Lock()
+
+def append_to_widget(widget, s):
+    widget.append(s)
+
+    
+class loggerHandler(Handler):
+
+    def __init__(self, loggerWidget):
+        
+        self.loggerWidget = loggerWidget
+        super(loggerHandler, self).__init__()
+
+    def emit(self, record):
+
+        self.loggerWidget.emit(QtCore.SIGNAL('newLog(QString)'), 
+                                             QtCore.QString(self.format(record).decode('gbk')))
+
+        
 
 class QMainArea(QtGui.QWidget):
 
@@ -24,8 +45,10 @@ class QMainArea(QtGui.QWidget):
         self.passwdText.setEchoMode(QtGui.QLineEdit.Password)
 
         self.loginBtn = QtGui.QPushButton(u'登录')
+        self.loginBtn.clicked.connect(self.login)
 
         self.logoutBtn = QtGui.QPushButton(u'断开')
+        self.logoutBtn.clicked.connect(self.logout)
 
         self.uploadBtn = QtGui.QPushButton(u'上传')
 
@@ -41,8 +64,18 @@ class QMainArea(QtGui.QWidget):
                                        u'所有者/组'])
 
         self.logLable = QtGui.QLabel(u'日志')
-        self.logView = QtGui.QPlainTextEdit()
-        self.logView.setReadOnly(True)
+        self.logView = QtGui.QTextBrowser()
+
+        self.ftp = FTP('')
+        self.logger = self.ftp.logger
+        self.handler = loggerHandler(self.logView)
+        self.handler.setFormatter(Formatter('%(asctime)s %(levelname)s: %(message)s'))
+
+        self.logger.addHandler(self.handler)
+        
+        self.logView.connect(self.logView,
+                             QtCore.SIGNAL('newLog(QString)'), 
+                             lambda log: append_to_widget(self.logView, log))
 
         grid = QtGui.QGridLayout()
         grid.setSpacing(5)
@@ -64,6 +97,62 @@ class QMainArea(QtGui.QWidget):
                 
         self.setLayout(grid)
 
+    def login(self):
+        
+        t = threading.Thread(target=self.loginRun)
+        t.start()
+
+    def loginRun(self):
+
+        if self.addressText.text() == '':
+            return self.errorAlert(u'请输入服务器的地址')
+        if self.accountText.text() == '' and self.passwdText.text() != '':
+            return self.errorAlert(u'您已经输入密码，请输入用户名')
+        self.ftp.url = self.addressText.text()
+        if self.accountText.text() == '' and self.passwdText.text() == '':
+            self.ftp.login()
+        else:
+            self.ftp.login(self.accountText.text(), 
+                           self.passwdText.text())
+
+        self.ftp.retrlines('LIST')
+
+        self.refreshFileList()
+
+
+    def refreshFileList(self):
+        
+        self.fileList.clear()
+        root = QtGui.QTreeWidgetItem()
+        root.setText(0, '..')
+        self.fileList.addTopLevelItem(root)
+        for _ in self.ftp.currentList:
+            fileInfo = QtGui.QTreeWidgetItem()
+            fileInfo.setText(0, _['name'])
+            fileInfo.setText(1, _['size'])
+            if _['permissions'][0] == 'd':
+                fileInfo.setText(2, u'文件夹')
+            elif _['isLn']:
+                fileInfo.setText(2, u'链接')
+            else:
+                fileInfo.setText(2, u'非文件夹/链接')
+            fileInfo.setText(3, _['date'])
+            fileInfo.setText(4, _['permissions'])
+            fileInfo.setText(5, _['owner'] + ' ' +  _['ownerGroup'])
+            self.fileList.addTopLevelItem(fileInfo)
+        
+
+    def logout(self):
+        
+        t = threading.Thread(target=self.ftp.quit)
+        t.start()
+
+    def errorAlert(self, s):
+
+        QtGui.QMessageBox.critical(self, u'错误', s)
+
+
+        
 class mainWindow(QtGui.QMainWindow):
     
     def __init__(self):
