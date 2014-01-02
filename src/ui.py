@@ -107,6 +107,10 @@ class QMainArea(QtGui.QWidget):
 
     def loginRun(self):
 
+        global mutex
+
+        mutex.acquire()
+        
         if self.addressText.text() == '':
             return self.errorAlert(u'请输入服务器的地址')
         if self.accountText.text() == '' and self.passwdText.text() != '':
@@ -119,6 +123,8 @@ class QMainArea(QtGui.QWidget):
                            self.passwdText.text())
 
         self.refreshFileList()
+        
+        mutex.release()
 
 
     def refreshFileList(self):
@@ -151,9 +157,15 @@ class QMainArea(QtGui.QWidget):
 
     
     def logoutRun(self):
+        
+        global mutex
+
+        mutex.acquire()
 
         self.ftp.quit()
         self.fileList.clear()
+
+        mutex.release()
 
     
     def download(self):
@@ -179,10 +191,16 @@ class QMainArea(QtGui.QWidget):
 
             
     def downloadRun(self, filenameIn, filenameOut):
+
+        global mutex
+
+        mutex.acquire()
         
         self.ftp.getDownload(filenameIn, filenameOut)
 
         self.refreshFileList()
+        
+        mutex.release()
 
         
     def upload(self):
@@ -203,10 +221,16 @@ class QMainArea(QtGui.QWidget):
         
 
     def uploadRun(self, filename, _filename):
+
+        global mutex
+
+        mutex.acquire()
         
         self.ftp.getUpload(filename, _filename)
     
         self.refreshFileList()
+
+        mutex.release()
 
     
     def changeDirectory(self):
@@ -219,8 +243,14 @@ class QMainArea(QtGui.QWidget):
 
     def changeDirectoryRun(self, directory):
 
+        global mutex
+
+        mutex.acquire()
+
         self.ftp.cwd(directory)
         self.refreshFileList()
+
+        mutex.release()
         
         
     def errorAlert(self, s):
