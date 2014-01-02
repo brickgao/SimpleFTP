@@ -125,6 +125,8 @@ class QMainArea(QtGui.QWidget):
             self.ftp.login(self.accountText.text(), 
                            self.passwdText.text())
 
+        self.ftp.retrlines('LIST')
+
         self.emit(QtCore.SIGNAL('needRefresh'))
         
         mutex.release()
@@ -132,7 +134,6 @@ class QMainArea(QtGui.QWidget):
 
     def refreshFileList(self):
         
-        self.ftp.retrlines('LIST')
         self.fileList.clear()
         root = QtGui.QTreeWidgetItem()
         root.setText(0, u'..')
@@ -201,6 +202,8 @@ class QMainArea(QtGui.QWidget):
         
         self.ftp.getDownload(filenameIn, filenameOut)
 
+        self.ftp.retrlines('LIST')
+
         self.emit(QtCore.SIGNAL('needRefresh'))
         
         mutex.release()
@@ -230,6 +233,8 @@ class QMainArea(QtGui.QWidget):
         mutex.acquire()
         
         self.ftp.getUpload(filename, _filename)
+
+        self.ftp.retrlines('LIST')
     
         self.emit(QtCore.SIGNAL('needRefresh'))
 
@@ -252,6 +257,9 @@ class QMainArea(QtGui.QWidget):
         mutex.acquire()
 
         self.ftp.cwd(directory)
+
+        self.ftp.retrlines('LIST')
+
         self.emit(QtCore.SIGNAL('needRefresh'))
 
         mutex.release()
