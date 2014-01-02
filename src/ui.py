@@ -300,14 +300,3 @@ class mainWindow(QtGui.QMainWindow):
         self.setMaximumSize(400, 600)
         self.setWindowTitle(u'SimpleFTP')
         self.show()
-        
-        
-def main():
-
-    app = QtGui.QApplication(sys.argv)
-    ex = mainWindow()
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main()
-
