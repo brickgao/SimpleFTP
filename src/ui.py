@@ -51,6 +51,7 @@ class QMainArea(QtGui.QWidget):
         self.logoutBtn.clicked.connect(self.logout)
 
         self.uploadBtn = QtGui.QPushButton(u'上传')
+        self.uploadBtn.clicked.connect(self.upload)
 
         self.downloadBtn = QtGui.QPushButton(u'下载')
         self.downloadBtn.clicked.connect(self.download)
@@ -165,10 +166,11 @@ class QMainArea(QtGui.QWidget):
                                                   u'下载文件', 
                                                   _.text(0), 
                                                   u'*.*')
-        fname = str(os.path.abspath(unicode(fname)))
-        __ = str(_.text(0))
+        fname = (unicode(fname))
         if fname == '':
             return
+        __ = str(_.text(0))
+        fname = str(os.path.abspath(fname))
 
         t = threading.Thread(target=self.downloadRun, args=(__,
                                                             fname, ))
@@ -184,8 +186,26 @@ class QMainArea(QtGui.QWidget):
         
     def upload(self):
 
-        pass
+        fname = QtGui.QFileDialog.getOpenFileName(self,
+                                                  u'上传文件', 
+                                                  '', 
+                                                  u'*.*')
+        fname = unicode(fname)
+        if fname == '':
+            return
+        _fname = str(os.path.abspath(fname))
+        fname = fname.split('/')[-1]
 
+        t = threading.Thread(target=self.uploadRun, args=(fname, _fname, ))
+        t.start()
+        
+
+    def uploadRun(self, filename, _filename):
+        
+        self.ftp.getUpload(filename, _filename)
+    
+        self.refreshFileList()
+        
         
     def errorAlert(self, s):
 
