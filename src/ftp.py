@@ -204,7 +204,7 @@ class FTP:
             return True
 
 
-    def getUpload(self, filename):
+    def getUpload(self, filename, filenameAbsPath):
 
         if not self.loginSucc:
             self.logger.error('You should login first.')
@@ -221,7 +221,7 @@ class FTP:
             return False
         else:
             self.logger.info(_[:-2])
-        _file = open(unicode(filename), 'rb')
+        _file = open(unicode(filenameAbsPath), 'rb')
         self.sockPasv.sendall(_file.read())
         _file.close()
         self.sockPasv.close()
