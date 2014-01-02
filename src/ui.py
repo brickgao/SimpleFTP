@@ -65,6 +65,9 @@ class QMainArea(QtGui.QWidget):
                                        u'权限', 
                                        u'所有者/组'])
         self.fileList.itemDoubleClicked.connect(self.changeDirectory)
+        self.connect(self,
+                     QtCore.SIGNAL('needRefresh'),
+                     self.refreshFileList)
 
         self.logLable = QtGui.QLabel(u'日志')
         self.logView = QtGui.QTextBrowser()
@@ -122,7 +125,7 @@ class QMainArea(QtGui.QWidget):
             self.ftp.login(self.accountText.text(), 
                            self.passwdText.text())
 
-        self.refreshFileList()
+        self.emit(QtCore.SIGNAL('needRefresh'))
         
         mutex.release()
 
@@ -198,7 +201,7 @@ class QMainArea(QtGui.QWidget):
         
         self.ftp.getDownload(filenameIn, filenameOut)
 
-        self.refreshFileList()
+        self.emit(QtCore.SIGNAL('needRefresh'))
         
         mutex.release()
 
@@ -228,7 +231,7 @@ class QMainArea(QtGui.QWidget):
         
         self.ftp.getUpload(filename, _filename)
     
-        self.refreshFileList()
+        self.emit(QtCore.SIGNAL('needRefresh'))
 
         mutex.release()
 
@@ -236,6 +239,7 @@ class QMainArea(QtGui.QWidget):
     def changeDirectory(self):
 
         _ = self.fileList.currentItem()
+
         t = threading.Thread(target=self.changeDirectoryRun, 
                              args=(str(_.text(0)), ))
         t.start()
@@ -248,7 +252,7 @@ class QMainArea(QtGui.QWidget):
         mutex.acquire()
 
         self.ftp.cwd(directory)
-        self.refreshFileList()
+        self.emit(QtCore.SIGNAL('needRefresh'))
 
         mutex.release()
         
