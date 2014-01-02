@@ -167,10 +167,10 @@ class FTP:
         # If SIZE Command error
         if _[:3] != '213':
             self.logger.error(_[:-2])
-            return False
+            return False, _
         else:
             self.logger.info(_[:-2])
-            return True
+            return True, int(_[4:-2])
 
             
     def getDownload(self, filenameIn, filenameOut):
@@ -179,19 +179,25 @@ class FTP:
             self.logger.info('You should login first.')
             return False
 
+        _, fsize = self.getSize(filenameIn)
+
+        if not _:   return False
+
         self.changeIntoPasv()
 
         self.sock.sendall('RETR ' + filenameIn + '\r\n')
-        _ = self.sock.recv(1024)
         self.logger.info('RETR ' + filenameIn)
+        _ = self.sock.recv(1024)
         # If RETR Command error
         if not '150' in _:
             self.logger.error(_[:-2])
             return False
         self.logger.info(_[:-2])
-        _ = self.sockPasv.recv(8152)
         _file = open(unicode(filenameOut), 'wb')
-        _file.write(_)
+        while fsize > 0:
+            _ = self.sockPasv.recv(1024)
+            fsize -= len(_)
+            _file.write(_)
         _file.close()
         self.sockPasv.close()
         _ = self.sock.recv(1024)
