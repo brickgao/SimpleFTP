@@ -64,6 +64,7 @@ class QMainArea(QtGui.QWidget):
                                        u'最近修改', 
                                        u'权限', 
                                        u'所有者/组'])
+        self.fileList.itemDoubleClicked.connect(self.changeDirectory)
 
         self.logLable = QtGui.QLabel(u'日志')
         self.logView = QtGui.QTextBrowser()
@@ -196,7 +197,8 @@ class QMainArea(QtGui.QWidget):
         _fname = str(os.path.abspath(fname))
         fname = fname.split('/')[-1]
 
-        t = threading.Thread(target=self.uploadRun, args=(fname, _fname, ))
+        t = threading.Thread(target=self.uploadRun, 
+                             args=(fname, _fname, ))
         t.start()
         
 
@@ -204,6 +206,20 @@ class QMainArea(QtGui.QWidget):
         
         self.ftp.getUpload(filename, _filename)
     
+        self.refreshFileList()
+
+    
+    def changeDirectory(self):
+
+        _ = self.fileList.currentItem()
+        t = threading.Thread(target=self.changeDirectoryRun, 
+                             args=(str(_.text(0)), ))
+        t.start()
+
+
+    def changeDirectoryRun(self, directory):
+
+        self.ftp.cwd(directory)
         self.refreshFileList()
         
         
