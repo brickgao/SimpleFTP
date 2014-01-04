@@ -105,6 +105,11 @@ class QMainArea(QtGui.QWidget):
 
     def login(self):
         
+        if self.addressText.text() == '':
+            return self.errorAlert(u'请输入服务器的地址')
+        if self.accountText.text() == '' and self.passwdText.text() != '':
+            return self.errorAlert(u'您已经输入密码，请输入用户名')
+
         t = threading.Thread(target=self.loginRun)
         t.start()
 
@@ -114,10 +119,6 @@ class QMainArea(QtGui.QWidget):
 
         mutex.acquire()
         
-        if self.addressText.text() == '':
-            return self.errorAlert(u'请输入服务器的地址')
-        if self.accountText.text() == '' and self.passwdText.text() != '':
-            return self.errorAlert(u'您已经输入密码，请输入用户名')
         self.ftp.url = str(self.addressText.text())
         if self.accountText.text() == '' and self.passwdText.text() == '':
             self.ftp.login()
