@@ -1,7 +1,7 @@
 SimpleFTP
 =========
 
-SimpleFTP 是一个由 Python 编写的简易 GUI 客户端。
+SimpleFTP 是一个由 Python 编写的带 GUI 的简易 FTP 客户端。
 
 **Tips**: SimpleFTP 是从 socket 层面完成的 FTP 协议，目的在于学习 FTP 协议，如果你需要用于生产环境，建议使用`ftplib`或者其他模块。
 
